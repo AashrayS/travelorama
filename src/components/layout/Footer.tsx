@@ -1,4 +1,3 @@
-
 import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Instagram, Youtube, Heart } from 'lucide-react';
 
@@ -8,7 +7,7 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
-            <h3 className="text-xl font-bold text-primary">Masterplan</h3>
+            <h3 className="text-xl font-bold text-primary">StayBeyond</h3>
             <p className="text-muted-foreground">
               All-in-one travel and accommodation platform. Find stays, rent vehicles, and discover local attractions.
             </p>
@@ -109,7 +108,7 @@ const Footer = () => {
         
         <div className="border-t border-border mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-muted-foreground text-sm">
-            © {new Date().getFullYear()} Masterplan. All rights reserved.
+            © {new Date().getFullYear()} StayBeyond. All rights reserved.
           </p>
           <p className="text-muted-foreground text-sm mt-4 md:mt-0 flex items-center">
             Made with <Heart size={14} className="mx-1 text-red-500" /> for travelers worldwide
