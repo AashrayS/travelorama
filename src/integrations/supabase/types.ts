@@ -9,7 +9,209 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      bookings: {
+        Row: {
+          check_in: string
+          check_out: string
+          created_at: string
+          id: string
+          property_id: string | null
+          status: string | null
+          total_price: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          check_in: string
+          check_out: string
+          created_at?: string
+          id?: string
+          property_id?: string | null
+          status?: string | null
+          total_price: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          check_in?: string
+          check_out?: string
+          created_at?: string
+          id?: string
+          property_id?: string | null
+          status?: string | null
+          total_price?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_recommendations: {
+        Row: {
+          author_id: string | null
+          comments: number | null
+          created_at: string
+          description: string
+          downvotes: number | null
+          id: string
+          image_url: string
+          location: string
+          title: string
+          updated_at: string
+          upvotes: number | null
+        }
+        Insert: {
+          author_id?: string | null
+          comments?: number | null
+          created_at?: string
+          description: string
+          downvotes?: number | null
+          id?: string
+          image_url: string
+          location: string
+          title: string
+          updated_at?: string
+          upvotes?: number | null
+        }
+        Update: {
+          author_id?: string | null
+          comments?: number | null
+          created_at?: string
+          description?: string
+          downvotes?: number | null
+          id?: string
+          image_url?: string
+          location?: string
+          title?: string
+          updated_at?: string
+          upvotes?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          email: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          email: string
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      properties: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          image_url: string
+          location: string
+          owner_id: string | null
+          price: number
+          rating: number | null
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          image_url: string
+          location: string
+          owner_id?: string | null
+          price: number
+          rating?: number | null
+          title: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string
+          location?: string
+          owner_id?: string | null
+          price?: number
+          rating?: number | null
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      transports: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string
+          location: string
+          owner_id: string | null
+          price: number
+          rating: number | null
+          seats: number | null
+          title: string
+          transmission: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url: string
+          location: string
+          owner_id?: string | null
+          price: number
+          rating?: number | null
+          seats?: number | null
+          title: string
+          transmission?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string
+          location?: string
+          owner_id?: string | null
+          price?: number
+          rating?: number | null
+          seats?: number | null
+          title?: string
+          transmission?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
