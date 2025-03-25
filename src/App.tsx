@@ -12,6 +12,7 @@ import Community from "./pages/Community";
 import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
 
+// Create a client
 const queryClient = new QueryClient();
 
 const App = () => (
