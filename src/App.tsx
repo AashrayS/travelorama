@@ -15,7 +15,6 @@ import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
-import Destinations from "./pages/Destinations";
 
 // Create a client
 const queryClient = new QueryClient();
@@ -33,7 +32,6 @@ const App = () => (
             <Route path="/property/:id" element={<PropertyDetails />} />
             <Route path="/transport-listings" element={<TransportListings />} />
             <Route path="/community" element={<Community />} />
-            <Route path="/destinations" element={<Destinations />} />
             <Route path="/auth" element={<Auth />} />
             <Route 
               path="/account" 
