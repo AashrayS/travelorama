@@ -53,7 +53,8 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				masterplan: {
+				// Renamed from masterplan to staybeyond to match the app name
+				staybeyond: {
 					50: '#f5f7fa',
 					100: '#ebeef3',
 					200: '#d5dfe9',
@@ -65,6 +66,19 @@ export default {
 					800: '#374a64',
 					900: '#2f3e54',
 					950: '#1e2736',
+				},
+				// Adding India-inspired colors
+				india: {
+					saffron: '#FF9933',
+					white: '#FFFFFF',
+					green: '#138808',
+					navy: '#000080',
+					chakra: '#0066CC',
+					spice: '#D2691E',
+					henna: '#AA5303',
+					marigold: '#ECA725',
+					peacock: '#326872',
+					lotus: '#E9967A',
 				},
 			},
 			borderRadius: {

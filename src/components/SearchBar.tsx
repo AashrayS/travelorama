@@ -41,8 +41,8 @@ const SearchBar = ({ isHero = false }: SearchBarProps) => {
             <MapPin size={20} className="text-muted-foreground mr-2" />
             <input
               type="text"
-              placeholder="Where are you going?"
-              className="w-full bg-transparent border-none outline-none"
+              placeholder="Where in India are you going?"
+              className="w-full bg-transparent border-none outline-none text-foreground"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
               required
@@ -54,7 +54,7 @@ const SearchBar = ({ isHero = false }: SearchBarProps) => {
             <input
               type="text"
               placeholder="Add dates"
-              className="w-full bg-transparent border-none outline-none"
+              className="w-full bg-transparent border-none outline-none text-foreground"
               onFocus={(e) => e.target.type = 'date'}
               onBlur={(e) => e.target.type = 'text'}
             />
@@ -63,7 +63,7 @@ const SearchBar = ({ isHero = false }: SearchBarProps) => {
           <div className="flex">
             <div className={`flex-1 ${isHero ? 'glass' : 'bg-secondary'} rounded-lg p-3 flex items-center mr-2`}>
               <Users size={20} className="text-muted-foreground mr-2" />
-              <select className="w-full bg-transparent border-none outline-none">
+              <select className="w-full bg-transparent border-none outline-none text-foreground">
                 <option value="1">1 Guest</option>
                 <option value="2">2 Guests</option>
                 <option value="3">3 Guests</option>

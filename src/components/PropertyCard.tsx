@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Star } from 'lucide-react';
+import { Heart, Star, IndianRupee } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface PropertyCardProps {
@@ -27,6 +27,11 @@ const PropertyCard = ({
 }: PropertyCardProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  
+  // Format price with Indian Rupee symbol and thousands separator
+  const formattedPrice = new Intl.NumberFormat('en-IN', {
+    maximumFractionDigits: 0
+  }).format(price);
   
   return (
     <div className={cn(
@@ -86,8 +91,9 @@ const PropertyCard = ({
           <p className="text-sm text-muted-foreground mt-1">{type}</p>
           
           <div className="mt-3 pt-3 border-t border-border">
-            <p className="font-semibold">
-              ${price} <span className="text-sm font-normal text-muted-foreground">night</span>
+            <p className="font-semibold flex items-center">
+              <IndianRupee size={16} className="mr-1" />
+              {formattedPrice} <span className="text-sm font-normal text-muted-foreground ml-1">night</span>
             </p>
           </div>
         </div>

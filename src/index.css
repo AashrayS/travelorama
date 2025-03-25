@@ -14,7 +14,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 210 33% 9%;
 
-    --primary: 210 100% 50%;
+    /* Primary color switched to India-inspired saffron */
+    --primary: 30 100% 60%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 20% 96%;
@@ -23,7 +24,8 @@
     --muted: 210 20% 96%;
     --muted-foreground: 210 20% 40%;
 
-    --accent: 210 100% 50%;
+    /* Accent color switched to India-inspired green */
+    --accent: 136 69% 27%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 100% 40%;
@@ -31,7 +33,7 @@
 
     --border: 210 20% 90%;
     --input: 210 20% 90%;
-    --ring: 210 100% 50%;
+    --ring: 30 100% 60%;
 
     --radius: 0.75rem;
   }
@@ -58,7 +60,12 @@
   }
   
   .glass-dark {
-    @apply bg-masterplan-950/50 backdrop-blur-md border border-masterplan-800/50 shadow-md;
+    @apply bg-staybeyond-950/50 backdrop-blur-md border border-staybeyond-800/50 shadow-md;
+  }
+
+  /* India-inspired glass */
+  .glass-india {
+    @apply bg-white/70 backdrop-blur-md border border-india-saffron/20 shadow-sm;
   }
   
   .fade-in-image {
@@ -107,6 +114,16 @@
   
   .section-subtitle {
     @apply text-xl text-muted-foreground mb-8 max-w-3xl;
+  }
+
+  /* India-inspired decorative elements */
+  .border-india-pattern {
+    @apply border-2 border-india-saffron rounded-lg p-4;
+    background-image: repeating-linear-gradient(45deg, rgba(255, 153, 51, 0.05) 0px, rgba(255, 153, 51, 0.05) 2px, transparent 2px, transparent 4px);
+  }
+  
+  .india-gradient {
+    @apply bg-gradient-to-r from-india-saffron via-white to-india-green;
   }
 }
 
