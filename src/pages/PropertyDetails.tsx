@@ -1,17 +1,22 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Star, MapPin, Calendar, Users, Shield, Award, Check, ChevronDown, ChevronUp, MessageSquare, Share2, Heart } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Award } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { cn } from '@/lib/utils';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { loadRazorpayScript, initializeRazorpay, updateBookingStatus } from '@/utils/razorpayUtils';
+import PropertyHeader from '@/components/property/PropertyHeader';
+import PropertyImages from '@/components/property/PropertyImages';
+import PropertyDescription from '@/components/property/PropertyDescription';
+import PropertyAmenities from '@/components/property/PropertyAmenities';
+import PropertyReviews from '@/components/property/PropertyReviews';
+import PropertyLocation from '@/components/property/PropertyLocation';
+import BookingCard from '@/components/property/BookingCard';
+import PaymentDialog from '@/components/property/PaymentDialog';
 
 const property = {
   id: '1',
@@ -95,31 +100,20 @@ const PropertyDetails = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  
   const [isFavorite, setIsFavorite] = useState(false);
-  const [showAllAmenities, setShowAllAmenities] = useState(false);
-  const [showAllDescription, setShowAllDescription] = useState(false);
   const [checkInDate, setCheckInDate] = useState('');
   const [checkOutDate, setCheckOutDate] = useState('');
   const [guestCount, setGuestCount] = useState(2);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [imageSliderVisible, setImageSliderVisible] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [bookingId, setBookingId] = useState(null);
+  const [bookingId, setBookingId] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   
   useEffect(() => {
     window.scrollTo(0, 0);
-    
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    document.body.appendChild(script);
-    
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
+    loadRazorpayScript();
   }, []);
   
   const handleBookNow = async () => {
@@ -183,14 +177,14 @@ const PropertyDetails = () => {
     if (!bookingId) return;
     
     const options = {
-      key: "rzp_test_JGb8T6Pfgi7zLz",
+      key: "rzp_test_YOUR_TEST_KEY_ID",
       amount: total * 100,
       currency: "INR",
       name: "StayBeyond",
       description: `Booking for ${property.title}`,
       image: "https://example.com/your_logo",
       order_id: "",
-      handler: function (response) {
+      handler: function (response: RazorpayResponse) {
         handlePaymentSuccess(response);
       },
       prefill: {
@@ -206,18 +200,12 @@ const PropertyDetails = () => {
       }
     };
     
-    const rzp = new (window as any).Razorpay(options);
-    rzp.open();
+    initializeRazorpay(options);
   };
   
-  const handlePaymentSuccess = async (response) => {
+  const handlePaymentSuccess = async (response: RazorpayResponse) => {
     try {
-      const { error } = await supabase
-        .from('bookings')
-        .update({ status: 'paid' })
-        .eq('id', bookingId);
-      
-      if (error) throw error;
+      await updateBookingStatus(bookingId!, 'paid');
       
       toast({
         title: "Payment Successful!",
@@ -258,88 +246,23 @@ const PropertyDetails = () => {
       
       <main className="flex-1 pt-20 pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-4">
-            <Button variant="ghost" size="sm" asChild className="flex items-center">
-              <Link to="/listings">
-                <ArrowLeft size={16} className="mr-1" />
-                Back to listings
-              </Link>
-            </Button>
-            
-            <div className="flex items-center space-x-2">
-              <Button variant="ghost" size="sm" className="flex items-center">
-                <Share2 size={16} className="mr-1" />
-                Share
-              </Button>
-              
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="flex items-center"
-                onClick={() => setIsFavorite(!isFavorite)}
-              >
-                <Heart 
-                  size={16} 
-                  className={cn(
-                    "mr-1 transition-colors",
-                    isFavorite ? "fill-red-500 stroke-red-500" : ""
-                  )} 
-                />
-                {isFavorite ? 'Saved' : 'Save'}
-              </Button>
-            </div>
-          </div>
+          <PropertyHeader
+            title={property.title}
+            location={property.location}
+            rating={property.rating}
+            reviewCount={property.reviewCount}
+            isFavorite={isFavorite}
+            onToggleFavorite={() => setIsFavorite(!isFavorite)}
+          />
           
-          <h1 className="text-2xl md:text-3xl font-bold mb-2">{property.title}</h1>
-          
-          <div className="flex flex-wrap items-center gap-3 mb-6">
-            <div className="flex items-center">
-              <Star size={16} className="fill-yellow-400 stroke-yellow-400 mr-1" />
-              <span className="font-medium">{property.rating}</span>
-              <span className="mx-1 text-muted-foreground">·</span>
-              <span className="text-muted-foreground">{property.reviewCount} reviews</span>
-            </div>
-            
-            <div className="flex items-center">
-              <MapPin size={16} className="text-muted-foreground mr-1" />
-              <span>{property.location}</span>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-8">
-            <div className="md:col-span-2 row-span-2 relative rounded-l-xl overflow-hidden">
-              <img 
-                src={property.images[0]} 
-                alt={property.title}
-                className="w-full h-full object-cover cursor-pointer"
-                onClick={() => {
-                  setActiveImageIndex(0);
-                  setImageSliderVisible(true);
-                }}
-              />
-            </div>
-            
-            {property.images.slice(1, 5).map((image, index) => (
-              <div 
-                key={index}
-                className={cn(
-                  "relative overflow-hidden", 
-                  index === 1 ? "rounded-tr-xl" : "",
-                  index === 3 ? "rounded-br-xl" : ""
-                )}
-              >
-                <img 
-                  src={image} 
-                  alt={`${property.title} ${index + 1}`}
-                  className="w-full h-full object-cover cursor-pointer"
-                  onClick={() => {
-                    setActiveImageIndex(index + 1);
-                    setImageSliderVisible(true);
-                  }}
-                />
-              </div>
-            ))}
-          </div>
+          <PropertyImages
+            images={property.images}
+            title={property.title}
+            onViewImage={(index) => {
+              setActiveImageIndex(index);
+              setImageSliderVisible(true);
+            }}
+          />
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
@@ -386,244 +309,38 @@ const PropertyDetails = () => {
                 </div>
               </div>
               
-              <div className="border-b border-border pb-6 mb-6">
-                <h2 className="text-xl font-semibold mb-3">About this place</h2>
-                <div>
-                  <p className={cn(
-                    "text-gray-600",
-                    !showAllDescription && "line-clamp-3"
-                  )}>
-                    {property.description}
-                  </p>
-                  
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="mt-2 p-0 h-auto font-medium" 
-                    onClick={() => setShowAllDescription(!showAllDescription)}
-                  >
-                    {showAllDescription ? (
-                      <span className="flex items-center">
-                        Show less <ChevronUp size={16} className="ml-1" />
-                      </span>
-                    ) : (
-                      <span className="flex items-center">
-                        Show more <ChevronDown size={16} className="ml-1" />
-                      </span>
-                    )}
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="border-b border-border pb-6 mb-6">
-                <h2 className="text-xl font-semibold mb-4">What this place offers</h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {property.amenities
-                    .slice(0, showAllAmenities ? property.amenities.length : 6)
-                    .map((amenity, index) => (
-                      <div key={index} className="flex items-start gap-3">
-                        <Check size={18} className="flex-shrink-0 text-primary mt-0.5" />
-                        <div>
-                          <p className="font-medium">{amenity.name}</p>
-                          <p className="text-sm text-muted-foreground">{amenity.description}</p>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-                
-                {property.amenities.length > 6 && (
-                  <Button 
-                    variant="outline" 
-                    className="mt-4" 
-                    onClick={() => setShowAllAmenities(!showAllAmenities)}
-                  >
-                    {showAllAmenities ? 'Show less' : `Show all ${property.amenities.length} amenities`}
-                  </Button>
-                )}
-              </div>
-              
-              <div className="border-b border-border pb-6 mb-6">
-                <div className="flex items-center mb-4">
-                  <Star size={20} className="fill-yellow-400 stroke-yellow-400 mr-2" />
-                  <h2 className="text-xl font-semibold">
-                    {property.rating} · {property.reviewCount} reviews
-                  </h2>
-                </div>
-                
-                <div className="space-y-6">
-                  {property.reviews.map((review) => (
-                    <div key={review.id} className="space-y-2">
-                      <div className="flex items-center">
-                        <Avatar className="h-10 w-10 mr-4">
-                          <AvatarImage src={review.user.avatar} alt={review.user.name} />
-                          <AvatarFallback>{review.user.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{review.user.name}</p>
-                          <p className="text-sm text-muted-foreground">{review.date}</p>
-                        </div>
-                      </div>
-                      <p className="text-gray-600">{review.comment}</p>
-                    </div>
-                  ))}
-                </div>
-                
-                {property.reviewCount > 3 && (
-                  <Button className="mt-6" variant="outline">
-                    Show all {property.reviewCount} reviews
-                  </Button>
-                )}
-              </div>
-              
-              <div>
-                <h2 className="text-xl font-semibold mb-4">Where you'll be</h2>
-                <p className="mb-4 text-gray-600">{property.location_details.description}</p>
-                <div className="bg-muted h-64 rounded-xl overflow-hidden">
-                  <iframe
-                    width="100%"
-                    height="100%"
-                    frameBorder="0"
-                    title="map"
-                    src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(property.location)}`}
-                    style={{ border: 0 }}
-                    allowFullScreen
-                  ></iframe>
-                </div>
-              </div>
+              <PropertyDescription description={property.description} />
+              <PropertyAmenities amenities={property.amenities} />
+              <PropertyReviews
+                rating={property.rating}
+                reviewCount={property.reviewCount}
+                reviews={property.reviews}
+              />
+              <PropertyLocation 
+                location={property.location}
+                locationDetails={property.location_details}
+              />
             </div>
             
             <div className="lg:col-span-1">
-              <div className="sticky top-24 glass rounded-xl p-6 shadow-sm border border-border">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <p className="text-xl font-semibold">
-                      ${property.price} <span className="text-sm font-normal">night</span>
-                    </p>
-                  </div>
-                  <div className="flex items-center">
-                    <Star size={16} className="fill-yellow-400 stroke-yellow-400 mr-1" />
-                    <span>{property.rating}</span>
-                    <span className="mx-1">·</span>
-                    <span className="text-muted-foreground text-sm">{property.reviewCount} reviews</span>
-                  </div>
-                </div>
-                
-                <Tabs defaultValue="booking" className="mb-4">
-                  <TabsList className="grid grid-cols-2 w-full">
-                    <TabsTrigger value="booking">Booking</TabsTrigger>
-                    <TabsTrigger value="contact">Contact host</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="booking" className="space-y-4 pt-4">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium">Check-in</label>
-                        <input
-                          type="date"
-                          className="w-full border border-input rounded-md p-2"
-                          value={checkInDate}
-                          onChange={(e) => setCheckInDate(e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium">Check-out</label>
-                        <input
-                          type="date"
-                          className="w-full border border-input rounded-md p-2"
-                          value={checkOutDate}
-                          onChange={(e) => setCheckOutDate(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-1">
-                      <label className="text-sm font-medium">Guests</label>
-                      <select
-                        className="w-full border border-input rounded-md p-2"
-                        value={guestCount}
-                        onChange={(e) => setGuestCount(Number(e.target.value))}
-                      >
-                        {Array.from({ length: property.guests }, (_, i) => i + 1).map((num) => (
-                          <option key={num} value={num}>
-                            {num} {num === 1 ? 'guest' : 'guests'}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    
-                    <Button 
-                      className="w-full" 
-                      size="lg"
-                      onClick={handleBookNow}
-                      disabled={!checkInDate || !checkOutDate || isProcessing}
-                    >
-                      {isProcessing ? 'Processing...' : 'Book now'}
-                    </Button>
-                    
-                    {checkInDate && checkOutDate && (
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>
-                            ${property.price} x {Math.ceil(totalPrice / property.price)} nights
-                          </span>
-                          <span>${totalPrice}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Service fee</span>
-                          <span>${serviceFee.toFixed(2)}</span>
-                        </div>
-                        <Separator className="my-2" />
-                        <div className="flex justify-between font-semibold">
-                          <span>Total</span>
-                          <span>${total.toFixed(2)}</span>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="text-center text-sm text-muted-foreground">
-                      You won't be charged yet
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="contact" className="pt-4">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <Avatar className="h-10 w-10 mr-4">
-                            <AvatarImage src={property.host.avatar} alt={property.host.name} />
-                            <AvatarFallback>{property.host.name.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{property.host.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              Joined {property.host.joinDate}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Shield size={16} />
-                        <span>To protect your payment, never transfer money or communicate outside of the Masterplan website.</span>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <h3 className="font-medium">Response rate: {property.host.responseRate}%</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Usually responds {property.host.responseTime}
-                        </p>
-                      </div>
-                      
-                      <div className="pt-2">
-                        <Button className="w-full" size="lg">
-                          <MessageSquare size={16} className="mr-2" />
-                          Contact host
-                        </Button>
-                      </div>
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </div>
+              <BookingCard
+                price={property.price}
+                rating={property.rating}
+                reviewCount={property.reviewCount}
+                guests={property.guests}
+                host={property.host}
+                onBookNow={handleBookNow}
+                checkInDate={checkInDate}
+                setCheckInDate={setCheckInDate}
+                checkOutDate={checkOutDate}
+                setCheckOutDate={setCheckOutDate}
+                guestCount={guestCount}
+                setGuestCount={setGuestCount}
+                totalPrice={totalPrice}
+                serviceFee={serviceFee}
+                total={total}
+                isProcessing={isProcessing}
+              />
             </div>
           </div>
         </div>
@@ -631,39 +348,15 @@ const PropertyDetails = () => {
       
       <Footer />
       
-      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Complete Your Booking</DialogTitle>
-            <DialogDescription>
-              Your booking is confirmed! Please complete the payment to secure your reservation.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <h3 className="font-medium">Booking Details</h3>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <span className="text-muted-foreground">Check-in:</span>
-                <span>{checkInDate}</span>
-                <span className="text-muted-foreground">Check-out:</span>
-                <span>{checkOutDate}</span>
-                <span className="text-muted-foreground">Guests:</span>
-                <span>{guestCount}</span>
-                <span className="text-muted-foreground">Total Amount:</span>
-                <span className="font-medium">₹{total.toFixed(2)}</span>
-              </div>
-            </div>
-            
-            <Button 
-              className="w-full" 
-              onClick={handlePaymentInitiation}
-            >
-              Proceed to Payment
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <PaymentDialog
+        open={showPaymentDialog}
+        onOpenChange={setShowPaymentDialog}
+        checkInDate={checkInDate}
+        checkOutDate={checkOutDate}
+        guestCount={guestCount}
+        total={total}
+        onPaymentInitiation={handlePaymentInitiation}
+      />
     </div>
   );
 };
