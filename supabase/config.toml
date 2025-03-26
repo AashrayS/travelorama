@@ -1,26 +1,40 @@
 
 project_id = "exxgffyqljmgxyoqfmgw"
 
-[storage.avatars]
+[auth]
+# No configuration needed here for now
+
+[api]
+# No configuration needed here for now
+
+[db]
+# No configuration needed here for now
+
+[realtime]
+# No configuration needed here for now
+
+# Storage configuration - following proper structure
+[storage]
+[storage.buckets.avatars]
 public = true
 
 [[storage.policies]]
 name = "Allow anyone to read avatars"
-storage.objects = "avatars"
+bucket = "avatars"
 operations = ["select"]
 for = "authenticated, anon"
 expression = "true"
 
 [[storage.policies]]
 name = "Allow authenticated users to upload avatars"
-storage.objects = "avatars"
+bucket = "avatars"
 operations = ["insert", "update"]
 for = "authenticated"
 expression = "auth.uid() = SPLIT_PART(storage.foldername(name), '/', 1)::uuid"
 
 [[storage.policies]]
 name = "Allow users to delete their own avatars"
-storage.objects = "avatars"
+bucket = "avatars"
 operations = ["delete"]
 for = "authenticated"
 expression = "auth.uid() = SPLIT_PART(storage.foldername(name), '/', 1)::uuid"
