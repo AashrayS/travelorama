@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Star, MapPin, Calendar, Users, Shield, Award, Check, ChevronDown, ChevronUp, MessageSquare, Share2, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,8 +8,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
-// Mock data
 const property = {
   id: '1',
   title: 'Modern Beach House with Ocean View',
@@ -90,6 +92,9 @@ const property = {
 
 const PropertyDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user } = useAuth();
   const [isFavorite, setIsFavorite] = useState(false);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
   const [showAllDescription, setShowAllDescription] = useState(false);
@@ -98,20 +103,138 @@ const PropertyDetails = () => {
   const [guestCount, setGuestCount] = useState(2);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [imageSliderVisible, setImageSliderVisible] = useState(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [bookingId, setBookingId] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   
   useEffect(() => {
-    // Scroll to top when component mounts
     window.scrollTo(0, 0);
+    
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
+    
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
   }, []);
   
-  const handleBookNow = () => {
-    console.log('Booking property...', {
-      propertyId: id,
-      checkInDate,
-      checkOutDate,
-      guestCount,
-      totalPrice: calculateTotalPrice(),
-    });
+  const handleBookNow = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to book this property",
+        variant: "destructive",
+      });
+      navigate('/auth');
+      return;
+    }
+    
+    if (!checkInDate || !checkOutDate) {
+      toast({
+        title: "Dates Required",
+        description: "Please select check-in and check-out dates",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsProcessing(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .insert({
+          property_id: id,
+          user_id: user.id,
+          check_in: checkInDate,
+          check_out: checkOutDate,
+          total_price: total,
+          status: 'pending'
+        })
+        .select();
+      
+      if (error) throw error;
+      
+      setBookingId(data[0].id);
+      
+      toast({
+        title: "Booking Confirmed!",
+        description: "Please proceed to payment to complete your booking.",
+      });
+      
+      setShowPaymentDialog(true);
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      toast({
+        title: "Booking Failed",
+        description: "There was an issue creating your booking. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+  
+  const handlePaymentInitiation = () => {
+    if (!bookingId) return;
+    
+    const options = {
+      key: "rzp_test_JGb8T6Pfgi7zLz",
+      amount: total * 100,
+      currency: "INR",
+      name: "StayBeyond",
+      description: `Booking for ${property.title}`,
+      image: "https://example.com/your_logo",
+      order_id: "",
+      handler: function (response) {
+        handlePaymentSuccess(response);
+      },
+      prefill: {
+        name: user?.email,
+        email: user?.email,
+      },
+      notes: {
+        booking_id: bookingId,
+        property_id: id
+      },
+      theme: {
+        color: "#3B82F6"
+      }
+    };
+    
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+  };
+  
+  const handlePaymentSuccess = async (response) => {
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status: 'paid' })
+        .eq('id', bookingId);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Payment Successful!",
+        description: "Your booking is confirmed. Enjoy your stay!",
+      });
+      
+      setShowPaymentDialog(false);
+      
+      navigate('/bookings/confirmed');
+    } catch (error) {
+      console.error('Error updating booking status:', error);
+      toast({
+        title: "Payment Error",
+        description: "Payment was received but we couldn't update your booking. Please contact support.",
+        variant: "destructive",
+      });
+    }
   };
   
   const calculateTotalPrice = () => {
@@ -128,14 +251,13 @@ const PropertyDetails = () => {
   const totalPrice = calculateTotalPrice();
   const serviceFee = totalPrice * 0.12;
   const total = totalPrice + serviceFee;
-  
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
       <main className="flex-1 pt-20 pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Back button and actions */}
           <div className="flex justify-between items-center mb-4">
             <Button variant="ghost" size="sm" asChild className="flex items-center">
               <Link to="/listings">
@@ -168,7 +290,6 @@ const PropertyDetails = () => {
             </div>
           </div>
           
-          {/* Property Title */}
           <h1 className="text-2xl md:text-3xl font-bold mb-2">{property.title}</h1>
           
           <div className="flex flex-wrap items-center gap-3 mb-6">
@@ -185,7 +306,6 @@ const PropertyDetails = () => {
             </div>
           </div>
           
-          {/* Property Images */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-8">
             <div className="md:col-span-2 row-span-2 relative rounded-l-xl overflow-hidden">
               <img 
@@ -223,7 +343,6 @@ const PropertyDetails = () => {
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
-              {/* Property Overview */}
               <div className="border-b border-border pb-6 mb-6">
                 <div className="flex justify-between items-start">
                   <div>
@@ -246,7 +365,6 @@ const PropertyDetails = () => {
                 </div>
               </div>
               
-              {/* Host Profile */}
               <div className="border-b border-border pb-6 mb-6">
                 <div className="flex items-start gap-3">
                   {property.host.isSuperhost && (
@@ -268,7 +386,6 @@ const PropertyDetails = () => {
                 </div>
               </div>
               
-              {/* Property Description */}
               <div className="border-b border-border pb-6 mb-6">
                 <h2 className="text-xl font-semibold mb-3">About this place</h2>
                 <div>
@@ -298,7 +415,6 @@ const PropertyDetails = () => {
                 </div>
               </div>
               
-              {/* Amenities */}
               <div className="border-b border-border pb-6 mb-6">
                 <h2 className="text-xl font-semibold mb-4">What this place offers</h2>
                 
@@ -327,7 +443,6 @@ const PropertyDetails = () => {
                 )}
               </div>
               
-              {/* Reviews */}
               <div className="border-b border-border pb-6 mb-6">
                 <div className="flex items-center mb-4">
                   <Star size={20} className="fill-yellow-400 stroke-yellow-400 mr-2" />
@@ -361,7 +476,6 @@ const PropertyDetails = () => {
                 )}
               </div>
               
-              {/* Location */}
               <div>
                 <h2 className="text-xl font-semibold mb-4">Where you'll be</h2>
                 <p className="mb-4 text-gray-600">{property.location_details.description}</p>
@@ -379,7 +493,6 @@ const PropertyDetails = () => {
               </div>
             </div>
             
-            {/* Booking Card */}
             <div className="lg:col-span-1">
               <div className="sticky top-24 glass rounded-xl p-6 shadow-sm border border-border">
                 <div className="flex justify-between items-start mb-4">
@@ -442,9 +555,9 @@ const PropertyDetails = () => {
                       className="w-full" 
                       size="lg"
                       onClick={handleBookNow}
-                      disabled={!checkInDate || !checkOutDate}
+                      disabled={!checkInDate || !checkOutDate || isProcessing}
                     >
-                      Book now
+                      {isProcessing ? 'Processing...' : 'Book now'}
                     </Button>
                     
                     {checkInDate && checkOutDate && (
@@ -517,6 +630,40 @@ const PropertyDetails = () => {
       </main>
       
       <Footer />
+      
+      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Complete Your Booking</DialogTitle>
+            <DialogDescription>
+              Your booking is confirmed! Please complete the payment to secure your reservation.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <h3 className="font-medium">Booking Details</h3>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <span className="text-muted-foreground">Check-in:</span>
+                <span>{checkInDate}</span>
+                <span className="text-muted-foreground">Check-out:</span>
+                <span>{checkOutDate}</span>
+                <span className="text-muted-foreground">Guests:</span>
+                <span>{guestCount}</span>
+                <span className="text-muted-foreground">Total Amount:</span>
+                <span className="font-medium">₹{total.toFixed(2)}</span>
+              </div>
+            </div>
+            
+            <Button 
+              className="w-full" 
+              onClick={handlePaymentInitiation}
+            >
+              Proceed to Payment
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
