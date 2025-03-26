@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Menu, X, Bell, Heart, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import SearchBar from "@/components/SearchBar";
 import GlobalSearch from "@/components/GlobalSearch";
 
@@ -15,7 +14,7 @@ const Navbar = () => {
   const isHome = location.pathname === "/";
   const { user, signOut } = useAuth();
   const { toast } = useToast();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
 
   // Close mobile menu when route changes
   useEffect(() => {
