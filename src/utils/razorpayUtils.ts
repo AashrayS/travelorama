@@ -62,3 +62,6 @@ export const updateBookingStatus = async (bookingId: string, status: 'paid' | 'c
     return false;
   }
 };
+
+// Razorpay key - using the test key ID provided
+export const RAZORPAY_KEY_ID = "rzp_test_DfF1r6xv4VVddb";

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Award } from 'lucide-react';
@@ -8,7 +9,12 @@ import Footer from '@/components/layout/Footer';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { loadRazorpayScript, initializeRazorpay, updateBookingStatus } from '@/utils/razorpayUtils';
+import { 
+  loadRazorpayScript, 
+  initializeRazorpay, 
+  updateBookingStatus,
+  RAZORPAY_KEY_ID 
+} from '@/utils/razorpayUtils';
 import PropertyHeader from '@/components/property/PropertyHeader';
 import PropertyImages from '@/components/property/PropertyImages';
 import PropertyDescription from '@/components/property/PropertyDescription';
@@ -177,7 +183,7 @@ const PropertyDetails = () => {
     if (!bookingId) return;
     
     const options = {
-      key: "rzp_test_YOUR_TEST_KEY_ID",
+      key: RAZORPAY_KEY_ID, // Using the imported key ID
       amount: total * 100,
       currency: "INR",
       name: "StayBeyond",
